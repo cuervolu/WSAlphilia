@@ -1,0 +1,14 @@
+# Ignorar archivos de configuración de Django
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.egg-info/
+dist/
+build/
+.idea/
+.vscode/
+*.sqlite3
+
+# Ignorar archivos de migraciones de Django
+**/migrations/
