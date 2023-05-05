@@ -1,11 +1,50 @@
 version: '3'
 
 services:
+  oracle:
+      image: gvenzl/oracle-xe:21
+      ports:
+        - ${DB_PORT}:1521
+      environment:
+        - APP_USER=grupo4
+        - APP_USER_PASSWORD=libreriaimagina
+        - ORACLE_DATABASE=${DB_NAME}
+        - ORACLE_PASSWORD=${DB_PASSWORD}
+        - ORACLE_ALLOW_REMOTE=true
+        - ORACLE_DISABLE_ASYNCH_IO=true
+        - ORACLE_BASE_HOME=/opt/oracle/homes/OraDBHome21cXE 
+        - ORACLE_HOME=/opt/oracle/product/21c/dbhomeXE 
+        - ORACLE_SID=XE
+      healthcheck:
+        test: ["CMD-SHELL", "/opt/oracle/homes/OraDBHome21cXE/healthcheck.sh >/dev/null || exit 1"]
+        interval: 1m
+        timeout: 10s
+        retries: 5
+      volumes:
+      - ./oracle-init-scripts:/docker-entrypoint-initdb.d # Monta la carpeta con los scripts de inicialización
   web:
-    build: .
-    command: python manage.py runserver 0.0.0.0:8000
-    container_name: ws-alphilia
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - IMAGE_NAME=wsAlphiliaREST
+    container_name: ws-alphilia-rest
+    command: ./entrypoint.sh
     volumes:
-      - .:/app
+      - ./alphilia:/app
     ports:
-      - "8000:8000"
+      - "8080:8080"
+    environment:
+      - APP_USER=grupo4
+      - APP_USER_PASSWORD=libreriaimagina
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+    env_file:
+      - .env
+    depends_on:
+      - oracle
+
+  
