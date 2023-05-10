@@ -22,7 +22,7 @@ class LibroPagination(pagination.PageNumberPagination):
 
 
 class LibroViewSet(viewsets.ModelViewSet):
-    queryset = Libro.objects.order_by("id_libro")
+    queryset = Libro.objects.order_by("nombre_libro")
     serializer_class = LibroSerializer
     pagination_class = LibroPagination
     
@@ -47,7 +47,7 @@ class LibroViewSet(viewsets.ModelViewSet):
             # Hacer una solicitud a la API de Google Books para obtener los libros más relevantes
             try:
                 response = requests.get(
-                    f"https://www.googleapis.com/books/v1/volumes?q=*&key={api_key}&startIndex={start_index}&maxResults={max_results}&orderBy=relevance&random={random.random()}"
+                    f"https://www.googleapis.com/books/v1/volumes?q=*&key={api_key}&startIndex={start_index}&maxResults={max_results}&orderBy=relevance&random={random.random()}&printType=books&projection=full"
                 )
             except requests.exceptions.RequestException as e:
                 print(f"Ocurrió un error al hacer la solicitud: {e}")
@@ -69,16 +69,16 @@ class LibroViewSet(viewsets.ModelViewSet):
                 volume_info = item.get("volumeInfo", {})
                 sale_info = item.get("saleInfo", {})
 
-                # Verificamos que exista la clave 'categories' en el diccionario de información del volumen
                 if "categories" in volume_info:
                     # Verificar si el libro está en una categoría permitida
                     categorias = volume_info.get("categories")
                     if categorias:
-                        categoria = "Otro"
+                        categoria = categorias[0]
                     else:
                         categoria = "Otro"
                 else:
                     categoria = "Otro"
+
 
                 fecha_publicacion = volume_info.get("publishedDate")
                 
@@ -106,6 +106,7 @@ class LibroViewSet(viewsets.ModelViewSet):
                     "cantidad_disponible": random.randint(1, 150),
                     "fecha_publicacion": fecha_publicacion,
                     "categoria": categoria,
+                    "isbn": volume_info.get("industryIdentifiers",[])[0].get("identifier","s/e")
                 }
 
                 # # Saltar este libro si no tiene una descripción

@@ -4,3 +4,4 @@ cx_oracle
 python-decouple
 django-cors-headers
 requests
+django-autoslug
