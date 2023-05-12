@@ -15,14 +15,19 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.contrib import admin
 from django.urls import include, path
-from rest_framework import routers
+from rest_framework.routers import DefaultRouter
 from sistema_web_alphilia.views import LibroViewSet
 
-router = routers.DefaultRouter()
-router.register(r'libros', LibroViewSet)
+router = DefaultRouter()
+router.register(r'libros', LibroViewSet, basename='libro')
 
 urlpatterns = [
+    path('libros/get-libros-from-api/', LibroViewSet.as_view({'get': 'get_libros_from_api'}), name='get-libros-from-api'),
+    path('libros/get-libros-by-categoria/', LibroViewSet.as_view({'get': 'get_libros_by_categoria'}), name='get-libros-by-categoria'),
     path('', include(router.urls)),
 ]
+
+
+urlpatterns += router.urls
+
