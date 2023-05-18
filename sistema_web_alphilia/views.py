@@ -49,19 +49,47 @@ class LibroViewSet(viewsets.ModelViewSet):
     queryset = Libro.objects.order_by("nombre_libro")
     serializer_class = LibroSerializer
     pagination_class = LibroPagination
-    
+
+    def obtener_portada_large(self, book_id):
+        api_key = config("GOOGLE_BOOKS_API_KEY")
+
+        # Construir la URL de la API de Google Books para obtener la información con la portada large del libro
+        url = f"https://www.googleapis.com/books/v1/volumes/{book_id}?projection=full&key={api_key}"
+
+        # Realizar la solicitud a la API de Google Books
+        try:
+            response = requests.get(url)
+            data = response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Ocurrió un error al hacer la solicitud: {e}")
+            raise
+
+        # Obtener la URL de la portada "large"
+        image_links = data.get("volumeInfo", {}).get("imageLinks", {})
+        large_thumbnail_url = image_links.get("large")
+        medium_thumbnail_url = image_links.get("medium")
+
+        # Si no hay portada "large", intentar con la portada "medium"
+        if not large_thumbnail_url:
+            large_thumbnail_url = medium_thumbnail_url
+
+        # Si aún no hay URL de la portada, utilizar la imagen predeterminada
+        if not large_thumbnail_url:
+            large_thumbnail_url = "https://islandpress.org/sites/default/files/default_book_cover_2015.jpg"
+
+        return large_thumbnail_url
+
+
     def create_libro_from_data(self,data, _=None):
+        book_id = data.get("id")
         volume_info = data.get("volumeInfo", {})
         sale_info = data.get("saleInfo", {})
-        
+
         isbn = volume_info.get("industryIdentifiers", [])[0].get("identifier", "s/e")
-        if Libro.objects.filter(isbn=isbn).exists():
-            return None
-        
         nombre_libro = volume_info.get("title", "")
         autor = volume_info.get("authors", ["a/d"])[0]
 
-        if Libro.objects.filter(nombre_libro=nombre_libro, autor=autor).exists():
+        if Libro.objects.filter(isbn=isbn, nombre_libro=nombre_libro, autor=autor).exists():
             return None
 
 
@@ -97,7 +125,8 @@ class LibroViewSet(viewsets.ModelViewSet):
             "precio_unitario": sale_info.get("retailPrice", {}).get(
                 "amount", random.randint(8000, 45000)
             ),
-            "portada": volume_info.get("imageLinks", {}).get(
+            "portada": self.obtener_portada_large(book_id),
+            "thumbnail": volume_info.get("imageLinks", {}).get(
                 "thumbnail",
                 "https://islandpress.org/sites/default/files/default_book_cover_2015.jpg",
             ),

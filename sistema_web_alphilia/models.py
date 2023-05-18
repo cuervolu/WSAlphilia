@@ -21,7 +21,8 @@ class Libro(models.Model):
     editorial = models.CharField(max_length=100, null=False)
     precio_unitario = models.DecimalField(max_digits=8, decimal_places=2)
     cantidad_disponible = models.BigIntegerField(null=False)
-    portada = models.URLField()
+    thumbnail = models.URLField()
+    portada = models.URLField(max_length=300)
     fecha_publicacion = models.DateField(null=True)
     categoria = models.CharField(
         max_length=200,
